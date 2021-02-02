@@ -232,19 +232,30 @@ func (p Prefix) String() string {
 // small address blocks by n which represents a number of subnetworks
 // in the power of 2 notation.
 func (p *Prefix) Subnets(n int) []Prefix {
+	var ps []Prefix
 	if 0 > n || n > 17 { // don't bother runtime.makeslice by big numbers
-		return nil
+		fmt.Printf("We have an edge case here for 10.0.0.0/8\n")
+		ps = make([]Prefix, 2*uint(n))
+	} else {
+		ps = make([]Prefix, 1<<uint(n))
 	}
-	ps := make([]Prefix, 1<<uint(n))
+	fmt.Printf("Huhhhhh %v %d\n", p.IP, len(ps))
 	if p.IP.To4() != nil {
+		fmt.Printf("IPv4 codepath: %b\n", p.IP)
 		x := ipToIPv4Int(p.IP)
+		fmt.Printf("Post int conversion: %b\n", p.IP)
+		fmt.Printf("int version: %d\n", x)
 		off := uint(IPv4PrefixLen - p.Len() - n)
+		fmt.Printf("offset %b\n", off)
 		for i := range ps {
+			fmt.Printf("Looping on ps: %b %v\n", i, x)
 			ii := x | ipv4Int(i<<off)
+			fmt.Printf("ii: %b\n", i)
 			ps[i] = *ii.prefix(p.Len()+n, IPv4PrefixLen)
 		}
 		return ps
 	}
+	fmt.Print("IPv6 codepath\n")
 	x := ipToIPv6Int(p.IP)
 	off := IPv6PrefixLen - p.Len() - n
 	for i := range ps {
@@ -428,7 +439,9 @@ func Compare(a, b *Prefix) int {
 
 // NewPrefix returns a new prefix.
 func NewPrefix(n *net.IPNet) *Prefix {
+	fmt.Printf("Pre-conversion IPNet: %v\n", &Prefix{IPNet: *n})
 	n.IP = n.IP.To16()
+	fmt.Printf("Converted IPNet: %v\n", &Prefix{IPNet: *n})
 	return &Prefix{IPNet: *n}
 }
 
